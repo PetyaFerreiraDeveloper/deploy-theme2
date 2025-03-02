@@ -66,16 +66,16 @@ jobs:
           git commit -m "Bump version to $NEW_VERSION"
           git push
 
-      - name: 🗑️ Remove Old Theme Files
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: practice-site.petyaferreira.com
-          username: u215844095
-          key: ${{ secrets.SSH_KEY }}
-          port: 65002
-          script: |
-            echo "Deleting old theme files..."
-            rm -rf /home/u215844095/public_html/wp-content/themes/deploy-theme/*
+      # - name: 🗑️ Remove Old Theme Files
+      #   uses: appleboy/ssh-action@v0.1.7
+      #   with:
+      #     host: practice-site.petyaferreira.com
+      #     username: u215844095
+      #     key: ${{ secrets.SSH_KEY }}
+      #     port: 65002
+      #     script: |
+      #       echo "Deleting old theme files..."
+      #       rm -rf /home/u215844095/public_html/wp-content/themes/deploy-theme/*
 
       - name: 📂 Deploy via SCP
         uses: appleboy/scp-action@v0.1.7
