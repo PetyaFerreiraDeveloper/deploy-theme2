@@ -1,0 +1,100 @@
+name: Publish and Deploy Website
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  web-deploy:
+    name: 🚀 Deploy Website Every Commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Get Latest Code
+        uses: actions/checkout@v3
+      - name: Check for Minor Version Change
+        id: check_minor_change
+        run: |
+          # Extract the current version
+          CURRENT_VERSION=$(grep 'Version:' style.css | awk '{print $2}')
+          IFS='.' read -ra CURRENT_VERSION_PARTS <<< "$CURRENT_VERSION"
+          CURRENT_MAJOR=${CURRENT_VERSION_PARTS[0]}
+          CURRENT_MINOR=${CURRENT_VERSION_PARTS[1]}
+
+          # Check if there is a previous commit
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            # Fetch the last committed version of style.css
+            LAST_COMMIT_VERSION=$(git show HEAD^:style.css | grep 'Version:' | awk '{print $2}')
+            IFS='.' read -ra LAST_COMMIT_VERSION_PARTS <<< "$LAST_COMMIT_VERSION"
+            LAST_COMMIT_MAJOR=${LAST_COMMIT_VERSION_PARTS[0]}
+            LAST_COMMIT_MINOR=${LAST_COMMIT_VERSION_PARTS[1]}
+
+            # Compare current minor version with the last committed minor version
+            if [[ "$CURRENT_MINOR" != "$LAST_COMMIT_MINOR" ]] || [[ "$CURRENT_MAJOR" != "$LAST_COMMIT_MAJOR" ]]; then
+              echo "Either major or minor version has changed since the last commit. Skipping version bump."
+              echo "skip=true" >> $GITHUB_ENV
+            else
+              echo "skip=false" >> $GITHUB_ENV
+            fi
+          else
+            echo "This is the first commit. Proceeding with version bump."
+            echo "skip=false" >> $GITHUB_ENV
+          fi
+
+      - name: Bump Version in style.css
+        if: env.skip == 'false'
+        run: |
+          # Extract the current version
+          VERSION_LINE=$(grep 'Version:' style.css)
+          CURRENT_VERSION=$(echo $VERSION_LINE | awk '{print $2}')
+
+          # Split the version into major, minor, and patch
+          IFS='.' read -ra ADDR <<< "$CURRENT_VERSION"
+
+          # Increment the patch version
+          ADDR[2]=$((${ADDR[2]} + 1))
+          NEW_VERSION="${ADDR[0]}.${ADDR[1]}.${ADDR[2]}"
+
+          # Update the version in style.css
+          sed -i "s/$CURRENT_VERSION/$NEW_VERSION/" style.css
+
+      - name: Commit and Push
+        if: env.skip == 'false'
+        run: |
+          git config user.email "petianaidenova@gmail.com"
+          git config user.name "Petya"
+          git add style.css
+          git commit -m "Bump version to $NEW_VERSION"
+          git push
+
+             - name: 🗑️ Remove Old Theme Files
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: practice-site.petyaferreira.com
+          username: u215844095
+          key: ${{ secrets.SSH_KEY }}
+          port: 65002
+          script: |
+            echo "Deleting old theme files..."
+            rm -rf /home/u215844095/public_html/wp-content/themes/deploy-theme/*
+
+      - name: 📂 Deploy via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: practice-site.petyaferreira.com
+          username: u215844095
+          key: ${{ secrets.SSH_KEY }}
+          port: 65002
+          source: "."
+          target: "/home/u215844095/public_html/wp-content/themes/deploy-theme/"
+          rm: true
+
+      - name: 🔄 Reload Server
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: practice-site.petyaferreira.com
+          username: u215844095
+          key: ${{ secrets.SSH_KEY }}
+          port: 65002
+          script: |
+            cd /home/u215844095/public_html/wp-content/themes/deploy-theme/
+            git pull origin main

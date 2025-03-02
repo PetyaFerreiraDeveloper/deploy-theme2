@@ -1,0 +1,15 @@
+/*
+Theme Name: Deploy Theme
+Version: 1.0.0
+*/
+
+.wrapper {
+  background-color: yellow;
+  color: red;
+  font-size: 55px;
+}
+
+.content {
+  background-color: black;
+  color: yellow;
+}
