@@ -5,5 +5,6 @@
 <p class="parag">this is my first paragraph</p>
 <p class="parag">this is my second paragraph</p>
 <p class="red">this is my third paragraph</p>
+<p class="red">this is my fourth paragraph</p>
 
 <?php get_footer() ?>
