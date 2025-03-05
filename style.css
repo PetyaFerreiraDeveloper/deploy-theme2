@@ -9,6 +9,13 @@ Version: 1.0.10
   font-size: 55px;
 }
 
+.container {
+  background-color: rgb(38, 38, 77);
+  color: white;
+  padding: 10px;
+  margin: 10px;
+}
+
 .content {
   background-color: black;
   color: yellow;
